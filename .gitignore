@@ -1,0 +1,9 @@
+# ide settings
+.DS_*
+.idea
+.vscode
+**/__pycache__/
+data-build/iwslt14.*
+log_latest
+image-tokenizer
+

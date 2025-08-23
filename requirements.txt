@@ -1,0 +1,13 @@
+dataset
+accelerate
+evaluate
+tokenizers
+transformers
+easyocr
+parti-pytorch
+timm
+vector-quantize-pytorch
+einops
+einops-exts
+ema-pytorch
+lmdb
