@@ -281,7 +281,7 @@ class VQGanVAETrainerMGPU(nn.Module):
                 recons = model(imgs)
                 nrows = int(sqrt(self.batch_size))
 
-                imgs_and_recons = torch.stack((imgs,), dim=0)
+                imgs_and_recons = torch.stack((imgs,recons), dim=0)
                 imgs_and_recons = rearrange(imgs_and_recons, 'r b ... -> (b r) ...')
                 self.accelerator.print("*" * 100)
                 self.accelerator.print(imgs_and_recons.shape)
