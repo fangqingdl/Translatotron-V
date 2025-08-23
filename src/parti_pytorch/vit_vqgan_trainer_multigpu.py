@@ -266,18 +266,15 @@ class VQGanVAETrainerMGPU(nn.Module):
                 imgs = imgs.to(device)
 
 
-                self.accelerator.print(imgs.shape)
-                self.accelerator.print(imgs)
                 recons = model(imgs)
                 nrows = int(sqrt(self.batch_size))
 
                 imgs_and_recons = torch.stack((imgs, recons), dim = 0)
                 imgs_and_recons = rearrange(imgs_and_recons, 'r b ... -> (b r) ...')
 
+                imgs_and_recons = imgs_and_recons.detach().cpu().float().clamp(0., 1.)
                 self.accelerator.print(imgs_and_recons.shape)
                 self.accelerator.print(imgs_and_recons)
-
-                imgs_and_recons = imgs_and_recons.detach().cpu().float().clamp(0., 1.)
                 grid = make_grid(imgs_and_recons, nrow = 2, normalize = True, value_range = (0, 1))
 
                 logs['reconstructions'] = grid
