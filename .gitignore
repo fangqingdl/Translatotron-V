@@ -1,5 +1,5 @@
 # ide settings
-.DS_*
+..DS_Store
 .idea
 .vscode
 **/__pycache__/
