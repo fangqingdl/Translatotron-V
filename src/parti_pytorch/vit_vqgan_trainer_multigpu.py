@@ -264,6 +264,8 @@ class VQGanVAETrainerMGPU(nn.Module):
                 imgs = next(self.dl)
                 imgs = imgs.to(device)
 
+
+                self.accelerator.print(imgs.shape)
                 recons = model(imgs)
                 nrows = int(sqrt(self.batch_size))
 
