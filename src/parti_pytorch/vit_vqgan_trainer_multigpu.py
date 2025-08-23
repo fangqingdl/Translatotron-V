@@ -291,6 +291,7 @@ class VQGanVAETrainerMGPU(nn.Module):
                 self.accelerator.print(imgs_and_recons.max(), imgs_and_recons.min())
                 self.accelerator.print(imgs_and_recons.shape)
                 self.accelerator.print(imgs_and_recons)
+                imgs_and_recons = imgs_and_recons * 255
                 grid = make_grid(imgs_and_recons, nrow=2, padding=2, normalize=True)
 
                 logs['reconstructions'] = grid
