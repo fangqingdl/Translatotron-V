@@ -3,6 +3,8 @@ import copy
 from random import choice
 from pathlib import Path
 from shutil import rmtree
+
+import numpy
 from PIL import Image
 
 import time
@@ -276,6 +278,7 @@ class VQGanVAETrainerMGPU(nn.Module):
                 self.accelerator.print(imgs_and_recons)
 
                 imgs_and_recons = imgs_and_recons.detach().cpu().float().clamp(0., 1.)
+                self.accelerator.print(imgs_and_recons.max(), imgs_and_recons.min())
                 self.accelerator.print(imgs_and_recons.shape)
                 self.accelerator.print(imgs_and_recons)
                 grid = make_grid(imgs_and_recons, nrow = 2, normalize = True, value_range = (0, 1))
