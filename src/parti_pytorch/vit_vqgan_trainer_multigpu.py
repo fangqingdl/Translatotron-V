@@ -249,7 +249,8 @@ class VQGanVAETrainerMGPU(nn.Module):
 
             # log
             cur_time = time.strftime("%Y-%m-%d %H:%M:%s", time.localtime(time.time()))
-            self.accelerator.print(f"[{cur_time}] {steps}: vae loss: {logs['loss']} - discr loss: {logs['discr_loss']}")
+            self.accelerator.print(
+                f"[{cur_time}] {steps}: vae loss: {logs['loss']} - discr loss: {logs['discr_loss']} - l1: {logs['l1']} - l2: {logs['l2']} - l3: {logs['l3']} - l4: {logs['l4']}")
     
         # update exponential moving averaged generator
 
