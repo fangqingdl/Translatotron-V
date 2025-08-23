@@ -291,7 +291,7 @@ class VQGanVAETrainerMGPU(nn.Module):
                 self.accelerator.print(imgs_and_recons.max(), imgs_and_recons.min())
                 self.accelerator.print(imgs_and_recons.shape)
                 self.accelerator.print(imgs_and_recons)
-                grid = make_grid(imgs_and_recons, nrow=2, padding=2)
+                grid = make_grid(imgs_and_recons, nrow=2, padding=2, normalize=True)
                 logs['reconstructions'] = grid
 
                 save_image(grid, str(self.results_folder / f'{filename}.png'))
