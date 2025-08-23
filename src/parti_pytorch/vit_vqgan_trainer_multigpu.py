@@ -28,25 +28,31 @@ from accelerate import Accelerator
 
 from accelerate import DistributedDataParallelKwargs
 
+
 # helpers
 
 def exists(val):
     return val is not None
 
+
 def noop(*args, **kwargs):
     pass
+
 
 def cycle(dl):
     while True:
         for data in dl:
             yield data
 
+
 def cast_tuple(t):
     return t if isinstance(t, (tuple, list)) else (t,)
+
 
 def yes_or_no(question):
     answer = input(f'{question} (y/n) ')
     return answer.lower() in ('yes', 'y')
+
 
 def accum_log(log, new_logs):
     for key, new_value in new_logs.items():
@@ -54,14 +60,15 @@ def accum_log(log, new_logs):
         log[key] = old_value + new_value
     return log
 
+
 # classes
 
 class ImageDataset(Dataset):
     def __init__(
-        self,
-        folder,
-        image_size,
-        exts = ['jpg', 'jpeg', 'png']
+            self,
+            folder,
+            image_size,
+            exts=['jpg', 'jpeg', 'png']
     ):
         super().__init__()
         self.folder = folder
@@ -86,47 +93,49 @@ class ImageDataset(Dataset):
         img = Image.open(path)
         return self.transform(img)
 
+
 # main trainer class
 
 class VQGanVAETrainerMGPU(nn.Module):
     def __init__(
-        self,
-        vae_config,
-        *,
-        num_train_steps,
-        batch_size,
-        folder,
-        lr = 3e-4,
-        grad_accum_every = 1,
-        wd = 0.,
-        save_results_every = 100,
-        save_model_every = 1000,
-        results_folder = './results',
-        valid_frac = 0.0005,
-        random_split_seed = 42,
-        ema_beta = 0.995,
-        ema_update_after_step = 500,
-        ema_update_every = 10,
-        apply_grad_penalty_every = 4,
-        amp = False
+            self,
+            vae_config,
+            *,
+            num_train_steps,
+            batch_size,
+            folder,
+            lr=3e-4,
+            grad_accum_every=1,
+            wd=0.,
+            save_results_every=100,
+            save_model_every=1000,
+            results_folder='./results',
+            valid_frac=0.0005,
+            random_split_seed=42,
+            ema_beta=0.995,
+            ema_update_after_step=500,
+            ema_update_every=10,
+            apply_grad_penalty_every=4,
+            amp=False
     ):
         super().__init__()
         image_size = vae_config['image_size']
 
         # self.accelerator = Accelerator(mixed_precision="fp16",kwargs_handlers=[DistributedDataParallelKwargs(find_unused_parameters=True)])
-        self.accelerator = Accelerator(mixed_precision="no",kwargs_handlers=[DistributedDataParallelKwargs(find_unused_parameters=True)])
+        self.accelerator = Accelerator(mixed_precision="no",
+                                       kwargs_handlers=[DistributedDataParallelKwargs(find_unused_parameters=True)])
         self.device = self.accelerator.device
-        
-                
-        self.vae =  VitVQGanVAE(
-                dim = vae_config['dim'],               # dimensions
-                image_size = vae_config['image_size'],        # target image size
-                patch_size = vae_config['patch_size'],         # size of the patches in the image attending to each other
-                num_layers = vae_config['num_layers'],           # number of layers
-                vq_codebook_dim = vae_config['vq_codebook_dim'],
-                vq_codebook_size = vae_config['vq_codebook_size'],
-            ).to(self.device)
-        self.ema_vae = EMA(self.vae, update_after_step = ema_update_after_step, update_every = ema_update_every).to(self.device)
+
+        self.vae = VitVQGanVAE(
+            dim=vae_config['dim'],  # dimensions
+            image_size=vae_config['image_size'],  # target image size
+            patch_size=vae_config['patch_size'],  # size of the patches in the image attending to each other
+            num_layers=vae_config['num_layers'],  # number of layers
+            vq_codebook_dim=vae_config['vq_codebook_dim'],
+            vq_codebook_size=vae_config['vq_codebook_size'],
+        ).to(self.device)
+        self.ema_vae = EMA(self.vae, update_after_step=ema_update_after_step, update_every=ema_update_every).to(
+            self.device)
 
         self.register_buffer('steps', torch.Tensor([0]))
 
@@ -138,24 +147,26 @@ class VQGanVAETrainerMGPU(nn.Module):
         discr_parameters = set(self.vae.discr.parameters())
         vae_parameters = all_parameters - discr_parameters
 
-        self.optim = get_optimizer(vae_parameters, lr = lr, wd = wd)
-        self.discr_optim = get_optimizer(discr_parameters, lr = lr, wd = wd)
+        self.optim = get_optimizer(vae_parameters, lr=lr, wd=wd)
+        self.discr_optim = get_optimizer(discr_parameters, lr=lr, wd=wd)
 
         self.amp = amp
-        self.scaler = GradScaler(enabled = amp)
-        self.discr_scaler = GradScaler(enabled = amp)
+        self.scaler = GradScaler(enabled=amp)
+        self.discr_scaler = GradScaler(enabled=amp)
 
         # create dataset
 
-        self.ds = ImageDataset(folder, image_size = image_size)
+        self.ds = ImageDataset(folder, image_size=image_size)
 
         # split for validation
 
         if valid_frac > 0:
             train_size = int((1 - valid_frac) * len(self.ds))
             valid_size = len(self.ds) - train_size
-            self.ds, self.valid_ds = random_split(self.ds, [train_size, valid_size], generator = torch.Generator().manual_seed(random_split_seed))
-            self.accelerator.print(f'training with dataset of {len(self.ds)} samples and validating with randomly splitted {len(self.valid_ds)} samples')
+            self.ds, self.valid_ds = random_split(self.ds, [train_size, valid_size],
+                                                  generator=torch.Generator().manual_seed(random_split_seed))
+            self.accelerator.print(
+                f'training with dataset of {len(self.ds)} samples and validating with randomly splitted {len(self.valid_ds)} samples')
         else:
             self.valid_ds = self.ds
             self.accelerator.print(f'training with shared training and valid dataset of {len(self.ds)} samples')
@@ -164,23 +175,24 @@ class VQGanVAETrainerMGPU(nn.Module):
 
         self.dl = DataLoader(
             self.ds,
-            batch_size = batch_size,
-            num_workers = 16,
-            shuffle = True
+            batch_size=batch_size,
+            num_workers=16,
+            shuffle=True
         )
 
         self.valid_dl = DataLoader(
             self.valid_ds,
-            batch_size = batch_size,
-            num_workers = 16,
-            shuffle = True
+            batch_size=batch_size,
+            num_workers=16,
+            shuffle=True
         )
 
-        self.vae, self.ema_vae, self.optim, self.dl, self.valid_dl, self.scaler, self.discr_scaler = self.accelerator.prepare(self.vae, self.ema_vae, self.optim, self.dl, self.valid_dl, self.scaler, self.discr_scaler)
+        self.vae, self.ema_vae, self.optim, self.dl, self.valid_dl, self.scaler, self.discr_scaler = self.accelerator.prepare(
+            self.vae, self.ema_vae, self.optim, self.dl, self.valid_dl, self.scaler, self.discr_scaler)
 
         self.dl = cycle(self.dl)
         self.valid_dl = cycle(self.valid_dl)
-        
+
         self.save_model_every = save_model_every
         self.save_results_every = save_results_every
 
@@ -190,8 +202,8 @@ class VQGanVAETrainerMGPU(nn.Module):
 
         if len([*self.results_folder.glob('**/*')]) > 0 and self.accelerator.is_main_process:
             rmtree(str(self.results_folder))
-        
-        self.results_folder.mkdir(parents = True, exist_ok = True)
+
+        self.results_folder.mkdir(parents=True, exist_ok=True)
 
     def train_step(self):
         # device = next(self.vae.parameters()).device
@@ -211,11 +223,11 @@ class VQGanVAETrainerMGPU(nn.Module):
             img = next(self.dl)
             img = img.to(device)
 
-            with autocast(enabled = self.amp):
+            with autocast(enabled=self.amp):
                 loss, l1, l2, l3, l4 = self.vae(
                     img,
-                    return_loss = True,
-                    apply_grad_penalty = apply_grad_penalty
+                    return_loss=True,
+                    apply_grad_penalty=apply_grad_penalty
                 )
                 # self.scaler.scale(loss / self.grad_accum_every).backward()
                 self.accelerator.backward(self.scaler.scale(loss / self.grad_accum_every))
@@ -223,7 +235,6 @@ class VQGanVAETrainerMGPU(nn.Module):
 
             accum_log(logs, {'loss': loss.item() / self.grad_accum_every})
 
-        
         self.scaler.step(self.optim)
         self.scaler.update()
         self.optim.zero_grad()
@@ -238,8 +249,8 @@ class VQGanVAETrainerMGPU(nn.Module):
                 img = next(self.dl)
                 img = img.to(device)
 
-                with autocast(enabled = self.amp):
-                    loss = self.vae(img, return_discr_loss = True)
+                with autocast(enabled=self.amp):
+                    loss = self.vae(img, return_discr_loss=True)
 
                     # self.discr_scaler.scale(loss / self.grad_accum_every).backward()
                     self.accelerator.backward(self.discr_scaler.scale(loss / self.grad_accum_every))
@@ -253,7 +264,7 @@ class VQGanVAETrainerMGPU(nn.Module):
             cur_time = time.strftime("%Y-%m-%d %H:%M:%s", time.localtime(time.time()))
             self.accelerator.print(
                 f"[{cur_time}] {steps}: vae loss: {logs['loss']} - discr loss: {logs['discr_loss']} - l1: {logs['l1']} - l2: {logs['l2']} - l3: {logs['l3']} - l4: {logs['l4']}")
-    
+
         # update exponential moving averaged generator
 
         self.ema_vae.module.update()
@@ -267,13 +278,12 @@ class VQGanVAETrainerMGPU(nn.Module):
                 imgs = next(self.dl)
                 imgs = imgs.to(device)
 
-
                 recons = model(imgs)
                 nrows = int(sqrt(self.batch_size))
 
-                imgs_and_recons = torch.stack((imgs,), dim = 0)
+                imgs_and_recons = torch.stack((imgs,), dim=0)
                 imgs_and_recons = rearrange(imgs_and_recons, 'r b ... -> (b r) ...')
-                self.accelerator.print("*"*100)
+                self.accelerator.print("*" * 100)
                 self.accelerator.print(imgs_and_recons.shape)
                 self.accelerator.print(imgs_and_recons)
 
@@ -281,7 +291,7 @@ class VQGanVAETrainerMGPU(nn.Module):
                 self.accelerator.print(imgs_and_recons.max(), imgs_and_recons.min())
                 self.accelerator.print(imgs_and_recons.shape)
                 self.accelerator.print(imgs_and_recons)
-                grid = make_grid(imgs_and_recons, nrow = 2, normalize = True, value_range = (0, 1))
+                grid = make_grid(imgs_and_recons, nrow=2, padding=2, normalize=True)
 
                 logs['reconstructions'] = grid
 
@@ -307,7 +317,7 @@ class VQGanVAETrainerMGPU(nn.Module):
         self.steps += 1
         return logs
 
-    def train(self, log_fn = noop):
+    def train(self, log_fn=noop):
         # device = next(self.vae.parameters()).device
         device = self.device
 
