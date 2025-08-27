@@ -685,6 +685,8 @@ class VitVQGanVAE(nn.Module):
             logs["descr_mean"] = "Warning: NaN or Inf detected in descr_mean"
 
         gen_loss = self.gen_loss(discr_img)
+        if torch.isnan(gen_loss).any() or torch.isinf(gen_loss).any():
+            logs["gen_loss1"] = "Warning: NaN or Inf detected in gen_loss1"
 
         # calculate adaptive weight
 
@@ -695,6 +697,9 @@ class VitVQGanVAE(nn.Module):
 
         adaptive_weight = safe_div(norm_grad_wrt_perceptual_loss, norm_grad_wrt_gen_loss)
         adaptive_weight.clamp_(max = 1e4)
+
+        if torch.isnan(gen_loss).any() or torch.isinf(gen_loss).any():
+            logs["gen_loss2"] = "Warning: NaN or Inf detected in gen_loss2"
 
         # combine losses
     
