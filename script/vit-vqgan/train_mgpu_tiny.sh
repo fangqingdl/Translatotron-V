@@ -19,4 +19,4 @@ torchrun --nproc_per_node=2 --master_port=29675 $prefix/src/train_mgpu.py \
     --num_layers $num_layers \
     --batch_size $batch_size \
     --grad_accum_every $grad_accum_every \
-    --vae_weight $prefix/image-tokenizer/en/vae.11000.pt
+    --vae_weight $prefix/image-tokenizer/en/vae.0.pt
