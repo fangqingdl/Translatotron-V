@@ -555,6 +555,7 @@ class VitVQGanVAE(nn.Module):
 
         self.discr_loss = hinge_discr_loss if use_hinge_loss else bce_discr_loss
         self.gen_loss = hinge_gen_loss if use_hinge_loss else bce_gen_loss
+        self.logs = None
 
     @property
     def encoded_dim(self):
@@ -611,6 +612,7 @@ class VitVQGanVAE(nn.Module):
         apply_grad_penalty = True,
         logs = None,
     ):
+        self.logs = logs
         batch, channels, height, width, device = *img.shape, img.device
         assert height == self.image_size and width == self.image_size, 'height and width of input image must be equal to {self.image_size}'
         assert channels == self.channels, 'number of channels on image or sketch is not equal to the channels set on this VQGanVAE'
@@ -671,6 +673,7 @@ class VitVQGanVAE(nn.Module):
         perceptual_loss = F.mse_loss(img_vgg_feats, recon_vgg_feats)
 
         # generator loss
+        logs["vit_vqgan"] = "true"
 
         if torch.isnan(fmap).any() or torch.isinf(fmap).any():
             logs["fmap"] = "Warning: NaN or Inf detected in fmap"
