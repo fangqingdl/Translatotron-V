@@ -263,9 +263,11 @@ class Discriminator(nn.Module):
             nn.Conv2d(final_dim, 1, 4)
         )
 
-    def forward(self, x):
+    def forward(self, x, logs = None):
         for net in self.layers:
             x = net(x)
+            if (torch.isnan(x).any() or torch.isinf(x).any()) and 'Discriminator' not in logs:
+                logs["Discriminator"] = f"Warning: NaN or Inf detected in {net.__class__.__name__}"
 
         return self.to_logits(x)
 
@@ -677,16 +679,11 @@ class VitVQGanVAE(nn.Module):
         if torch.isnan(fmap).any() or torch.isinf(fmap).any():
             logs["fmap"] = "Warning: NaN or Inf detected in fmap"
 
-        discr_img = self.discr(fmap)
-        if torch.isnan(discr_img).any() or torch.isinf(discr_img).any():
-            logs["discr_img"] = "Warning: NaN or Inf detected in discr_img"
-        descr_mean = discr_img.mean()
-        if torch.isnan(descr_mean).any() or torch.isinf(descr_mean).any():
-            logs["descr_mean"] = "Warning: NaN or Inf detected in descr_mean"
+        discr_feat = self.discr(fmap, logs=logs)
+        if torch.isnan(discr_feat).any() or torch.isinf(discr_feat).any():
+            logs["discr_feat"] = "Warning: NaN or Inf detected in discr_feat"
 
-        gen_loss = self.gen_loss(discr_img)
-        if torch.isnan(gen_loss).any() or torch.isinf(gen_loss).any():
-            logs["gen_loss1"] = "Warning: NaN or Inf detected in gen_loss1"
+        gen_loss = self.gen_loss(discr_feat)
 
         # calculate adaptive weight
 
@@ -698,11 +695,8 @@ class VitVQGanVAE(nn.Module):
         adaptive_weight = safe_div(norm_grad_wrt_perceptual_loss, norm_grad_wrt_gen_loss)
         adaptive_weight.clamp_(max = 1e4)
 
-        if torch.isnan(gen_loss).any() or torch.isinf(gen_loss).any():
-            logs["gen_loss2"] = "Warning: NaN or Inf detected in gen_loss2"
-
         # combine losses
-    
+
         loss = recon_loss + perceptual_loss + commit_loss + adaptive_weight * gen_loss
 
         if return_recons:
