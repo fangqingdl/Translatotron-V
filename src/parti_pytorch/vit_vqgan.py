@@ -608,7 +608,8 @@ class VitVQGanVAE(nn.Module):
         return_loss = False,
         return_discr_loss = False,
         return_recons = False,
-        apply_grad_penalty = True
+        apply_grad_penalty = True,
+        logs = None,
     ):
         batch, channels, height, width, device = *img.shape, img.device
         assert height == self.image_size and width == self.image_size, 'height and width of input image must be equal to {self.image_size}'
@@ -670,6 +671,9 @@ class VitVQGanVAE(nn.Module):
         perceptual_loss = F.mse_loss(img_vgg_feats, recon_vgg_feats)
 
         # generator loss
+
+        if torch.isnan(fmap).any() or torch.isinf(fmap).any():
+            logs["fmap"] = "Warning: NaN or Inf detected in fmap"
 
         gen_loss = self.gen_loss(self.discr(fmap))
 

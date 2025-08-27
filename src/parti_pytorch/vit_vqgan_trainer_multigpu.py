@@ -230,7 +230,8 @@ class VQGanVAETrainerMGPU(nn.Module):
                 loss, l1, l2, l3, l4 = self.vae(
                     img,
                     return_loss=True,
-                    apply_grad_penalty=apply_grad_penalty
+                    apply_grad_penalty=apply_grad_penalty,
+                    logs=logs,
                 )
                 # self.scaler.scale(loss / self.grad_accum_every).backward()
                 self.accelerator.backward(self.scaler.scale(loss / self.grad_accum_every))
