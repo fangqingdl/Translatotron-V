@@ -270,8 +270,13 @@ class Discriminator(nn.Module):
                 x = mod(x)
                 if (torch.isnan(x).any() or torch.isinf(x).any()) and logs and 'Discriminator' not in logs:
                     logs["Discriminator"] = f"Warning: NaN or Inf detected in i:{i}, j:{j}: {net.__class__.__name__}"
-                    logs["Discriminator_out"] = x
                     logs["Discriminator_in"] = input_x
+                    logs["Discriminator_out"] = x
+                    for p in mod.parameters():
+                        if p.requires_grad:
+                            logs[p.name] = p.data
+                        if p.requires_grad and (torch.isnan(p.data).any() or torch.isinf(p.data).any()):
+                            logs["p.name.name"] = "nan"
 
         return self.to_logits(x)
 
