@@ -674,11 +674,14 @@ class VitVQGanVAE(nn.Module):
 
         # generator loss
         logs["vit_vqgan"] = "true"
-
         if torch.isnan(fmap).any() or torch.isinf(fmap).any():
             logs["fmap"] = "Warning: NaN or Inf detected in fmap"
 
-        gen_loss = self.gen_loss(self.discr(fmap))
+        discr_img = self.discr(fmap)
+        if torch.isnan(fmap).any() or torch.isinf(fmap).any():
+            logs["fmap"] = "Warning: NaN or Inf detected in discr_img"
+
+        gen_loss = self.gen_loss(discr_img)
 
         # calculate adaptive weight
 
