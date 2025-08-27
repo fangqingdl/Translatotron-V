@@ -116,7 +116,8 @@ class VQGanVAETrainerMGPU(nn.Module):
             ema_update_after_step=500,
             ema_update_every=10,
             apply_grad_penalty_every=4,
-            amp=False
+            amp=False,
+            vae_weight=None,
     ):
         super().__init__()
         image_size = vae_config['image_size']
@@ -134,6 +135,8 @@ class VQGanVAETrainerMGPU(nn.Module):
             vq_codebook_dim=vae_config['vq_codebook_dim'],
             vq_codebook_size=vae_config['vq_codebook_size'],
         ).to(self.device)
+        if vae_weight is not None:
+            self.vae.load_state_dict(torch.load(vae_weight, map_location='cpu'))
         self.ema_vae = EMA(self.vae, update_after_step=ema_update_after_step, update_every=ema_update_every).to(
             self.device)
 
