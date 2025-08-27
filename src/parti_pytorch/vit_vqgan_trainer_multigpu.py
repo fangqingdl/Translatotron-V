@@ -61,6 +61,10 @@ def accum_log(log, new_logs):
     return log
 
 
+def logs2string(logs):
+    return ", ".join(f"{key}: {value}" for key, value in logs.items())
+
+
 # classes
 
 class ImageDataset(Dataset):
@@ -237,7 +241,7 @@ class VQGanVAETrainerMGPU(nn.Module):
                 self.accelerator.backward(self.scaler.scale(loss / self.grad_accum_every))
             accum_log(logs, {"l1": l1, "l2": l2, "l3": l3, "l4": l4})
 
-            accum_log(logs, {'loss': loss.item() / self.grad_accum_every})
+            accum_log(logs, {'vae_loss': loss.item() / self.grad_accum_every})
 
         self.scaler.step(self.optim)
         self.scaler.update()
@@ -254,7 +258,7 @@ class VQGanVAETrainerMGPU(nn.Module):
                 img = img.to(device)
 
                 with autocast(enabled=self.amp):
-                    loss = self.vae(img, return_discr_loss=True)
+                    loss = self.vae(img, return_discr_loss=True, logs=logs)
 
                     # self.discr_scaler.scale(loss / self.grad_accum_every).backward()
                     self.accelerator.backward(self.discr_scaler.scale(loss / self.grad_accum_every))
@@ -266,8 +270,9 @@ class VQGanVAETrainerMGPU(nn.Module):
 
             # log
             cur_time = time.strftime("%Y-%m-%d %H:%M:%s", time.localtime(time.time()))
+
             self.accelerator.print(
-                f"[{cur_time}] {steps}: vae loss: {logs['loss']} - discr loss: {logs['discr_loss']} - l1: {logs['l1']} - l2: {logs['l2']} - l3: {logs['l3']} - l4: {logs['l4']}")
+                f"[{cur_time}] {steps}: {logs2string(logs)}")
 
         # update exponential moving averaged generator
 
@@ -285,7 +290,7 @@ class VQGanVAETrainerMGPU(nn.Module):
                 recons = model(imgs)
                 nrows = int(sqrt(self.batch_size))
 
-                imgs_and_recons = torch.stack((imgs,recons), dim=0)
+                imgs_and_recons = torch.stack((imgs, recons), dim=0)
                 imgs_and_recons = rearrange(imgs_and_recons, 'r b ... -> (b r) ...')
                 self.accelerator.print("*" * 100)
                 self.accelerator.print(imgs_and_recons.shape)
