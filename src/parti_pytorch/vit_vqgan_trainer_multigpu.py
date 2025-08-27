@@ -203,8 +203,8 @@ class VQGanVAETrainerMGPU(nn.Module):
 
         self.results_folder = Path(results_folder)
 
-        if len([*self.results_folder.glob('**/*')]) > 0 and self.accelerator.is_main_process:
-            rmtree(str(self.results_folder))
+        # if len([*self.results_folder.glob('**/*')]) > 0 and self.accelerator.is_main_process:
+        #     rmtree(str(self.results_folder))
 
         self.results_folder.mkdir(parents=True, exist_ok=True)
 
