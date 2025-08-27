@@ -265,12 +265,13 @@ class Discriminator(nn.Module):
 
     def forward(self, x, logs = None):
         for i, net in enumerate(self.layers):
-            input_x = x
-            x = net(x)
-            if (torch.isnan(x).any() or torch.isinf(x).any()) and logs and 'Discriminator' not in logs:
-                logs["Discriminator"] = f"Warning: NaN or Inf detected in {i}: {net.__class__.__name__}"
-                logs["Discriminator_out"] = x
-                logs["Discriminator_in"] = input_x
+            for j, mod in enumerate(net):
+                input_x = x
+                x = mod(x)
+                if (torch.isnan(x).any() or torch.isinf(x).any()) and logs and 'Discriminator' not in logs:
+                    logs["Discriminator"] = f"Warning: NaN or Inf detected in i:{i}, j:{j}: {net.__class__.__name__}"
+                    logs["Discriminator_out"] = x
+                    logs["Discriminator_in"] = input_x
 
         return self.to_logits(x)
 
