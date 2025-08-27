@@ -678,7 +678,7 @@ class VitVQGanVAE(nn.Module):
             logs["fmap"] = "Warning: NaN or Inf detected in fmap"
 
         discr_img = self.discr(fmap)
-        if torch.isnan(fmap).any() or torch.isinf(fmap).any():
+        if torch.isnan(discr_img).any() or torch.isinf(discr_img).any():
             logs["fmap"] = "Warning: NaN or Inf detected in discr_img"
 
         gen_loss = self.gen_loss(discr_img)
