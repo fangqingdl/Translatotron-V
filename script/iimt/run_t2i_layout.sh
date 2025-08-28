@@ -21,8 +21,9 @@ nohup torchrun --nproc_per_node=1 --master_port=27699 $prefix/src/run_t2i_with_l
     --vae_config_path $prefix/src/config/vit_vqgan_8192cb.json \
     --t2i_config_path $prefix/src/config/t2i_transformer_distill.json \
     --vae_weight $prefix/image-tokenizer/en/vae.11000.pt \
-#    --resume_from_checkpoint $prefix/result_new/$save_name/epoch_6 \
     --use_amp true \
     --num_workers 16 \
     --checkpointing_steps epoch \
     >>$prefix/log_latest/$save_name.log 2>&1 &
+
+#    --resume_from_checkpoint $prefix/result_new/$save_name/epoch_6 \
