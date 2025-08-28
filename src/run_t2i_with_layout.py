@@ -191,6 +191,8 @@ def parse_args():
     
     if args.output_dir is not None:
         os.makedirs(args.output_dir, exist_ok=True)
+    if args.resume_from_checkpoint is not None:
+        os.makedirs(args.resume_from_checkpoint, exist_ok=True)
 
     return args
 
