@@ -1,5 +1,5 @@
 
-export prefix="/data/home/jevinfang/py_proj/Translatotron-V"
+export prefix="/data/workspace/Translatotron-V"
 export save_name="t2i_layout_avg"
 
 python -m torch.distributed.run --nproc_per_node=1 --master_port=27699 $prefix/src/run_t2i_with_layout.py \
