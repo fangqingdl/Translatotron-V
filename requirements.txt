@@ -11,3 +11,4 @@ einops
 einops-exts
 ema-pytorch
 lmdb
+sacrebleu
