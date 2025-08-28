@@ -2,7 +2,7 @@
 export prefix="/data/workspace/Translatotron-V"
 export save_name="t2i_layout_avg"
 
-nohup python -m torch.distributed.run --nproc_per_node=1 --master_port=27699 $prefix/src/run_t2i_with_layout.py \
+torchrun --nproc_per_node=1 --master_port=27699 $prefix/src/run_t2i_with_layout.py \
     --train_lmdb_path $prefix/data-build/iwslt14.de-en-lmdb/train_ \
     --valid_lmdb_path $prefix/data-build/iwslt14.de-en-lmdb/valid_ \
     --per_device_train_batch_size 10 \
@@ -24,5 +24,4 @@ nohup python -m torch.distributed.run --nproc_per_node=1 --master_port=27699 $pr
     --resume_from_checkpoint $prefix/result_new/$save_name/epoch_6 \
     --use_amp true \
     --num_workers 16 \
-    --checkpointing_steps epoch \
-    >>$prefix/log_latest/$save_name.log 2>&1
+    --checkpointing_steps epoch
