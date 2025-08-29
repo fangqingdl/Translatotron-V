@@ -457,27 +457,20 @@ def main():
                     if args.output_dir is not None:
                         output_dir = os.path.join(args.output_dir, output_dir)
                     accelerator.save_state(output_dir)
-            if step > 9:
-                break
 
             if completed_steps >= args.max_train_steps:
                 break
 
         model.eval()
         all_accuracy = []
-        accelerator.print("start eval1")
+        unwrap_model = accelerator.unwrap_model(model)
         for step, batch in enumerate(eval_dataloader):
-            accelerator.print("start eval2")
             with torch.no_grad():
-                images, image_tokens  = accelerator.unwrap_model(model).generate(batch[0],batch[1])
-                accelerator.print("start eval3")
-                _, ref_image_tokens, _ = accelerator.unwrap_model(model).vae.encode(batch[2], return_indices_and_loss = True)
-            accelerator.print("start eval4")
-            images, references, image_tokens, ref_image_tokens = accelerator.gather_for_metrics((images, batch[2], 
+                images, image_tokens  = unwrap_model.generate(batch[0],batch[1])
+                _, ref_image_tokens, _ = unwrap_model.vae.encode(batch[2], return_indices_and_loss = True)
+            images, references, image_tokens, ref_image_tokens = accelerator.gather_for_metrics((images, batch[2],
                                                                                           image_tokens, ref_image_tokens
                                                                                           ))
-
-            accelerator.print("start eval5")
 
             accuracy = ((image_tokens==ref_image_tokens).sum()/image_tokens.numel()).cpu()
             all_accuracy.append(accuracy)
@@ -485,9 +478,12 @@ def main():
             imgs_and_recons = rearrange(imgs_and_recons, 'r b ... -> (b r) ...')
             imgs_and_recons = imgs_and_recons.detach().cpu().float().clamp(0., 1.)
             grid = make_grid(imgs_and_recons, nrow = 2, normalize = True, value_range = (0, 1))
+
+            accelerator.print(f"eval step: {step}, accuracy: {accuracy}")
             
             if accelerator.is_local_main_process:
-                save_image(grid, (args.output_dir + "/" + f'epoch_{str(epoch)}.png'))                
+                save_image(grid, (args.output_dir + "/" + f'epoch_{str(epoch)}.png'))
+
                 
 
         accelerator.print("epoch {}: all accuracy: {}, best accuracy: {}".format(epoch, mean(all_accuracy), best_accuracy))
