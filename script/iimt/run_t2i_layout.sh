@@ -5,9 +5,9 @@ export save_name="t2i_layout_avg"
 nohup torchrun --nproc_per_node=1 --master_port=27699 $prefix/src/run_t2i_with_layout.py \
     --train_lmdb_path $prefix/data-build/iwslt14.de-en-lmdb/train_ \
     --valid_lmdb_path $prefix/data-build/iwslt14.de-en-lmdb/valid_ \
-    --per_device_train_batch_size 8 \
+    --per_device_train_batch_size 10 \
     --per_device_eval_batch_size 4 \
-    --learning_rate 1e-5 \
+    --learning_rate 1.25e-5 \
     --num_train_epochs 100 \
     --gradient_accumulation_steps 1 \
     --num_warmup_steps 2000 \
