@@ -466,14 +466,11 @@ def main():
 
         model.eval()
         all_accuracy = []
-        unwrap_model = None
         eval_progress_bar = tqdm(range(len(eval_dataloader)), disable=not accelerator.is_local_main_process)
         for step, batch in enumerate(eval_dataloader):
             with torch.no_grad():
-                if unwrap_model is None:
-                    unwrap_model = accelerator.unwrap_model(model)
-                images, image_tokens  = unwrap_model.generate(batch[0],batch[1])
-                _, ref_image_tokens, _ = unwrap_model.vae.encode(batch[2], return_indices_and_loss = True)
+                images, image_tokens  = accelerator.unwrap_model(model).generate(batch[0],batch[1])
+                _, ref_image_tokens, _ = accelerator.unwrap_model(model).vae.encode(batch[2], return_indices_and_loss = True)
             images, references, image_tokens, ref_image_tokens = accelerator.gather_for_metrics((images, batch[2],
                                                                                           image_tokens, ref_image_tokens
                                                                                           ))
