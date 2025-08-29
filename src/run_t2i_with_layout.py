@@ -322,9 +322,9 @@ def main():
     # train_dataset.map(collate_fn, batched=True, num_proc=args.num_workers)
     
     train_dataloader = DataLoader(
-        train_dataset, shuffle=True, batch_size=args.per_device_train_batch_size, num_workers=args.num_workers, collate_fn=collate_fn
+        train_dataset, shuffle=True, batch_size=args.per_device_train_batch_size, num_workers=args.num_workers, collate_fn=collate_fn, drop_last=True
     )
-    eval_dataloader = DataLoader(eval_dataset, batch_size=args.per_device_eval_batch_size, num_workers=args.num_workers, collate_fn=collate_fn)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=args.per_device_eval_batch_size, num_workers=args.num_workers, collate_fn=collate_fn, drop_last=True)
 
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
@@ -470,13 +470,14 @@ def main():
             accelerator.print("start eval2")
             with torch.no_grad():
                 images, image_tokens  = accelerator.unwrap_model(model).generate(batch[0],batch[1])
+                accelerator.print("start eval3")
                 _, ref_image_tokens, _ = accelerator.unwrap_model(model).vae.encode(batch[2], return_indices_and_loss = True)
-            accelerator.print("start eval3")
+            accelerator.print("start eval4")
             images, references, image_tokens, ref_image_tokens = accelerator.gather_for_metrics((images, batch[2], 
                                                                                           image_tokens, ref_image_tokens
                                                                                           ))
 
-            accelerator.print("start eval4")
+            accelerator.print("start eval5")
 
             accuracy = ((image_tokens==ref_image_tokens).sum()/image_tokens.numel()).cpu()
             all_accuracy.append(accuracy)
