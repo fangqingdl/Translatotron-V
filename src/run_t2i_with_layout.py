@@ -465,14 +465,18 @@ def main():
 
         model.eval()
         all_accuracy = []
+        accelerator.print("start eval1")
         for step, batch in enumerate(eval_dataloader):
+            accelerator.print("start eval2")
             with torch.no_grad():
                 images, image_tokens  = accelerator.unwrap_model(model).generate(batch[0],batch[1])
                 _, ref_image_tokens, _ = accelerator.unwrap_model(model).vae.encode(batch[2], return_indices_and_loss = True)
-
+            accelerator.print("start eval3")
             images, references, image_tokens, ref_image_tokens = accelerator.gather_for_metrics((images, batch[2], 
                                                                                           image_tokens, ref_image_tokens
                                                                                           ))
+
+            accelerator.print("start eval4")
 
             accuracy = ((image_tokens==ref_image_tokens).sum()/image_tokens.numel()).cpu()
             all_accuracy.append(accuracy)
