@@ -458,12 +458,16 @@ def main():
                         output_dir = os.path.join(args.output_dir, output_dir)
                     accelerator.save_state(output_dir)
 
+            if step >= 10:
+                break
+
             if completed_steps >= args.max_train_steps:
                 break
 
         model.eval()
         all_accuracy = []
         unwrap_model = accelerator.unwrap_model(model)
+        eval_progress_bar = tqdm(range(len(eval_dataloader)), disable=not accelerator.is_local_main_process)
         for step, batch in enumerate(eval_dataloader):
             with torch.no_grad():
                 images, image_tokens  = unwrap_model.generate(batch[0],batch[1])
@@ -472,6 +476,7 @@ def main():
                                                                                           image_tokens, ref_image_tokens
                                                                                           ))
 
+
             accuracy = ((image_tokens==ref_image_tokens).sum()/image_tokens.numel()).cpu()
             all_accuracy.append(accuracy)
             imgs_and_recons = torch.stack((references, images), dim = 0)
@@ -479,8 +484,9 @@ def main():
             imgs_and_recons = imgs_and_recons.detach().cpu().float().clamp(0., 1.)
             grid = make_grid(imgs_and_recons, nrow = 2, normalize = True, value_range = (0, 1))
 
-            accelerator.print(f"eval step: {step}, accuracy: {accuracy}")
-            
+            eval_progress_bar.update(1)
+            progress_bar.set_description(f"eval Epoch: {epoch}, step: {step}, accuracy: {accuracy}")
+
             if accelerator.is_local_main_process:
                 save_image(grid, (args.output_dir + "/" + f'epoch_{str(epoch)}.png'))
 
