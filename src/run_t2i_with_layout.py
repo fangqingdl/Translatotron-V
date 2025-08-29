@@ -458,9 +458,6 @@ def main():
                         output_dir = os.path.join(args.output_dir, output_dir)
                     accelerator.save_state(output_dir)
 
-            if step >= 10:
-                break
-
             if completed_steps >= args.max_train_steps:
                 break
 
