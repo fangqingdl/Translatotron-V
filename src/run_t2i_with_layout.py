@@ -466,10 +466,12 @@ def main():
 
         model.eval()
         all_accuracy = []
-        unwrap_model = accelerator.unwrap_model(model)
+        unwrap_model = None
         eval_progress_bar = tqdm(range(len(eval_dataloader)), disable=not accelerator.is_local_main_process)
         for step, batch in enumerate(eval_dataloader):
             with torch.no_grad():
+                if unwrap_model is None:
+                    unwrap_model = accelerator.unwrap_model(model)
                 images, image_tokens  = unwrap_model.generate(batch[0],batch[1])
                 _, ref_image_tokens, _ = unwrap_model.vae.encode(batch[2], return_indices_and_loss = True)
             images, references, image_tokens, ref_image_tokens = accelerator.gather_for_metrics((images, batch[2],
@@ -485,7 +487,7 @@ def main():
             grid = make_grid(imgs_and_recons, nrow = 2, normalize = True, value_range = (0, 1))
 
             eval_progress_bar.update(1)
-            progress_bar.set_description(f"eval Epoch: {epoch}, step: {step}, accuracy: {accuracy}")
+            eval_progress_bar.set_description(f"eval Epoch: {epoch}, step: {step}, accuracy: {accuracy}")
 
             if accelerator.is_local_main_process:
                 save_image(grid, (args.output_dir + "/" + f'epoch_{str(epoch)}.png'))
