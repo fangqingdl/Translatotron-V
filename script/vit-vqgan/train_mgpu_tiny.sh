@@ -6,8 +6,8 @@ dim=256
 num_layers=4
 batch_size=4
 grad_accum_every=16
-save_name="en"
-image_dir="data-build/iwslt14.de-en-images/train_en"
+save_name="de"
+image_dir="data-build/iwslt14.de-en-images/train_de"
 
 nohup torchrun --nproc_per_node=2 --master_port=29675 $prefix/src/train_mgpu.py \
     --output_dir $prefix/image-tokenizer/$save_name \
