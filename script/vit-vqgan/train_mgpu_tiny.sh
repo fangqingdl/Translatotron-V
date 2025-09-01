@@ -9,7 +9,7 @@ grad_accum_every=16
 save_name="en"
 image_dir="data-build/iwslt14.de-en-images/train_en"
 
-nohup torchrun --nproc_per_node=2 --master_port=29675 $prefix/src/train_mgpu.py \
+nohup torchrun --nproc_per_node=4 --master_port=29675 $prefix/src/train_mgpu.py \
     --output_dir $prefix/image-tokenizer/$save_name \
     --vq_codebook_size $vq_codebook_size \
     --vq_codebook_dim $vq_codebook_dim \
