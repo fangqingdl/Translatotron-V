@@ -26,6 +26,6 @@ torchrun --nproc_per_node=1 $prefix/src/run_translatotron_v.py \
     --temperature 1.0 \
     --vae_weight $prefix/image-tokenizer/en/vae.11000.pt \
     --use_amp true \
-    --num_workers 4 \
+    --num_workers 1 \
     --max_eval_samples 500 \
     --checkpointing_steps epoch
