@@ -58,8 +58,10 @@ require_version("datasets>=2.0.0", "To fix: pip install -r examples/pytorch/imag
 
 def parse_args():
     parser = argparse.ArgumentParser(description="Train a TIT model on an image dataset")
-    parser.add_argument("--train_lmdb_path", type=str, default=None, help="A folder containing the image training data.")
-    parser.add_argument("--valid_lmdb_path", type=str, default=None, help="A folder containing the image validation data.")
+    parser.add_argument("--train_lmdb_path", type=str, default=None,
+                        help="A folder containing the image training data.")
+    parser.add_argument("--valid_lmdb_path", type=str, default=None,
+                        help="A folder containing the image validation data.")
     parser.add_argument("--image_size", type=int, default=256, help="The size of the input images.")
     parser.add_argument("--src_lang", type=str, default=None, help="The source language.")
     parser.add_argument("--tgt_lang", type=str, default=None, help="The target language.")
@@ -77,7 +79,8 @@ def parse_args():
     parser.add_argument("--alpha", type=float, default=1.0, help="The weight of distill loss.")
     parser.add_argument("--beta", type=float, default=1.0, help="The weight of ocr loss.")
     parser.add_argument("--gamma", type=float, default=1.0, help="The weight of tit loss.")
-    parser.add_argument("--cond_drop_prob", type=float, default=0.0, help="The probability of mask when perform cross-attention.")
+    parser.add_argument("--cond_drop_prob", type=float, default=0.0,
+                        help="The probability of mask when perform cross-attention.")
     parser.add_argument("--vit_mask_prob", type=float, default=0.0, help="The probability of mask vit input.")
     parser.add_argument("--num_workers", type=int, default=1, help="A folder containing the validation data.")
     parser.add_argument("--ocr_smoothing", type=float, default=0.1, help="label smoothing for ocr task.")
@@ -146,7 +149,8 @@ def parse_args():
         "--num_warmup_steps", type=int, default=0, help="Number of steps for the warmup in the lr scheduler."
     )
     parser.add_argument(
-        "--use_amp", type=bool, default=False, help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit"
+        "--use_amp", type=bool, default=False,
+        help="Whether to use 16-bit (mixed) precision (through NVIDIA apex) instead of 32-bit"
     )
     parser.add_argument("--output_dir", type=str, default=None, help="Where to store the final model.")
     parser.add_argument("--seed", type=int, default=None, help="A seed for reproducible training.")
@@ -203,7 +207,7 @@ def parse_args():
 
     if args.src_lang is None or args.tgt_lang is None:
         raise ValueError("Need to specify both source and target languages.")
-    
+
     if args.output_dir is not None:
         os.makedirs(args.output_dir, exist_ok=True)
 
@@ -222,8 +226,10 @@ def main():
         accelerator_log_kwargs["log_with"] = args.report_to
         accelerator_log_kwargs["logging_dir"] = args.output_dir
 
-    accelerator = Accelerator(mixed_precision="fp16" if args.use_amp else None, gradient_accumulation_steps=args.gradient_accumulation_steps, 
-                              kwargs_handlers=[DistributedDataParallelKwargs(find_unused_parameters=True)], **accelerator_log_kwargs)
+    accelerator = Accelerator(mixed_precision="fp16" if args.use_amp else None,
+                              gradient_accumulation_steps=args.gradient_accumulation_steps,
+                              kwargs_handlers=[DistributedDataParallelKwargs(find_unused_parameters=True)],
+                              **accelerator_log_kwargs)
 
     logger.info(accelerator.state)
     # Make one log on every process with the configuration for debugging.
@@ -253,15 +259,15 @@ def main():
     # Load config from json file
     with open(args.vae_config_path, "r") as f:
         vae_config = json.load(f)
-        
+
     with open(args.iit_config_path, "r") as f:
         iit_config = json.load(f)
-    
+
     with open(args.teacher_config_path, "r") as f:
         teacher_config = json.load(f)
 
     image_size = vae_config["image_size"] if "image_size" in vae_config else args.image_size
-    
+
     if args.src_tokenizer_path is not None:
         src_tokenizer = PreTrainedTokenizerFast.from_pretrained(args.src_tokenizer_path)
     else:
@@ -271,20 +277,24 @@ def main():
         tgt_tokenizer = PreTrainedTokenizerFast.from_pretrained(args.tgt_tokenizer_path)
     else:
         raise ValueError("Need to specify a target tokenizer.")
-    
-    model = TranslatotronV(**iit_config, patch_size = vae_config['patch_size'], img_size = image_size, vae_config = vae_config, 
-                           vae_weight = args.vae_weight, src_text_tokenizer = src_tokenizer, tgt_text_tokenizer = tgt_tokenizer,
-                           teacher_model_weight = args.teacher_model_weight, teacher_model_config = teacher_config,
-                           temperature = args.temperature, image_encoder_weight = args.image_encoder_weight, cond_drop_prob = args.cond_drop_prob,
-                           vit_mask_prob = args.vit_mask_prob, tit_smoothing = args.tit_smoothing, ocr_smoothing = args.ocr_smoothing,
+
+    model = TranslatotronV(**iit_config, patch_size=vae_config['patch_size'], img_size=image_size,
+                           vae_config=vae_config,
+                           vae_weight=args.vae_weight, src_text_tokenizer=src_tokenizer,
+                           tgt_text_tokenizer=tgt_tokenizer,
+                           teacher_model_weight=args.teacher_model_weight, teacher_model_config=teacher_config,
+                           temperature=args.temperature, image_encoder_weight=args.image_encoder_weight,
+                           cond_drop_prob=args.cond_drop_prob,
+                           vit_mask_prob=args.vit_mask_prob, tit_smoothing=args.tit_smoothing,
+                           ocr_smoothing=args.ocr_smoothing,
                            ocr_dropout=args.ocr_dropout, tit_dropout=args.tit_dropout)
     # Define torchvision transforms to be applied to each image.
     train_transforms = T.Compose([
-            T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
-            T.Resize(image_size),
-            T.CenterCrop(image_size),
-            T.ToTensor()
-        ])
+        T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
+        T.Resize(image_size),
+        T.CenterCrop(image_size),
+        T.ToTensor()
+    ])
     train_src_transforms = T.Compose([
         T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
         T.Resize(224),
@@ -292,28 +302,30 @@ def main():
         T.ToTensor()
     ])
     val_transforms = T.Compose([
-            T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
-            T.Resize(image_size),
-            T.CenterCrop(image_size),
-            T.ToTensor()
-        ])
-    
+        T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
+        T.Resize(image_size),
+        T.CenterCrop(image_size),
+        T.ToTensor()
+    ])
+
     val_src_transforms = T.Compose([
         T.Lambda(lambda img: img.convert('RGB') if img.mode != 'RGB' else img),
         T.Resize(224),
         T.CenterCrop(image_size),
         T.ToTensor()
     ])
-    
+
     # Get the datasets
-    train_dataset = TITImageTextLmdbDataset(args.src_lang, args.tgt_lang, args.train_lmdb_path, image_size, train_transforms)
-    eval_dataset = TITImageTextLmdbDataset(args.src_lang, args.tgt_lang, args.valid_lmdb_path, image_size, val_transforms)
+    train_dataset = TITImageTextLmdbDataset(args.src_lang, args.tgt_lang, args.train_lmdb_path, image_size,
+                                            train_transforms)
+    eval_dataset = TITImageTextLmdbDataset(args.src_lang, args.tgt_lang, args.valid_lmdb_path, image_size,
+                                           val_transforms)
 
     if args.max_train_samples is not None:
         train_dataset = train_dataset.select(range(args.max_train_samples))
     if args.max_eval_samples is not None:
         eval_dataset = eval_dataset.select(range(args.max_eval_samples))
-    
+
     def shift_tokens_right(input_ids: torch.Tensor, decoder_start_token_id: int):
         """
         Shift input ids one token to the right.
@@ -323,39 +335,45 @@ def main():
         shifted_input_ids[:, 0] = decoder_start_token_id
 
         return shifted_input_ids
-    
+
     def collate_fn(batch):
         src_img, tgt_img, src_text_label, tgt_text_label = [], [], [], []
         for i in range(len(batch)):
             src_img.append(batch[i][0])
             tgt_img.append(batch[i][1])
             # src_text.append(src_tokenizer.bos_token + batch[i][2])
-            print(batch[i])
-            src_text_label.append(batch[i][2] + src_tokenizer.eos_token)
-            # tgt_text.append(src_tokenizer.bos_token + batch[i][3])
-            tgt_text_label.append(batch[i][3] + tgt_tokenizer.eos_token)
-            
+            try:
+                src_text_label.append(batch[i][2] + src_tokenizer.eos_token)
+                # tgt_text.append(src_tokenizer.bos_token + batch[i][3])
+                tgt_text_label.append(batch[i][3] + tgt_tokenizer.eos_token)
+            except Exception as e:
+                print(batch[i])
+                raise e
+
         # coverting to tensors
         src_img = torch.stack(src_img)
         tgt_img = torch.stack(tgt_img)
-        src_text_label = src_tokenizer.batch_encode_plus(src_text_label, truncation=True, padding=True, max_length=args.max_src_length, return_tensors="pt")
+        src_text_label = src_tokenizer.batch_encode_plus(src_text_label, truncation=True, padding=True,
+                                                         max_length=args.max_src_length, return_tensors="pt")
         src_text_label['labels'] = src_text_label['input_ids']
         src_text_label['input_ids'] = shift_tokens_right(src_text_label['input_ids'], src_tokenizer.bos_token_id)
         src_text_label['attention_mask'] = src_text_label['attention_mask'].bool()
-        
-        
-        tgt_text_label = tgt_tokenizer.batch_encode_plus(tgt_text_label, truncation=True, padding=True, max_length=args.max_tgt_length, return_tensors="pt")
+
+        tgt_text_label = tgt_tokenizer.batch_encode_plus(tgt_text_label, truncation=True, padding=True,
+                                                         max_length=args.max_tgt_length, return_tensors="pt")
         tgt_text_label['labels'] = tgt_text_label['input_ids']
         tgt_text_label['input_ids'] = shift_tokens_right(tgt_text_label['input_ids'], tgt_tokenizer.bos_token_id)
         tgt_text_label['attention_mask'] = tgt_text_label['attention_mask'].bool()
         return src_img, tgt_img, src_text_label, tgt_text_label
-    
+
     # train_dataset.map(collate_fn, batched=True, num_proc=args.num_workers)
-    
+
     train_dataloader = DataLoader(
-        train_dataset, shuffle=True, batch_size=args.per_device_train_batch_size, num_workers=args.num_workers, collate_fn=collate_fn
+        train_dataset, shuffle=True, batch_size=args.per_device_train_batch_size, num_workers=args.num_workers,
+        collate_fn=collate_fn
     )
-    eval_dataloader = DataLoader(eval_dataset, batch_size=args.per_device_eval_batch_size, num_workers=args.num_workers, collate_fn=collate_fn)
+    eval_dataloader = DataLoader(eval_dataset, batch_size=args.per_device_eval_batch_size, num_workers=args.num_workers,
+                                 collate_fn=collate_fn)
 
     # Optimizer
     # Split weights in two groups, one with weight decay and the other not.
@@ -432,7 +450,7 @@ def main():
     if args.resume_from_checkpoint:
         if args.resume_from_checkpoint is not None or args.resume_from_checkpoint != "":
             accelerator.print(f"Resumed from checkpoint: {args.resume_from_checkpoint}")
-            accelerator.load_state(args.resume_from_checkpoint,strict=False)
+            accelerator.load_state(args.resume_from_checkpoint, strict=False)
             path = os.path.basename(args.resume_from_checkpoint)
         else:
             # Get the most recent checkpoint
@@ -449,7 +467,6 @@ def main():
             resume_step = int(training_difference.replace("step_", ""))
             starting_epoch = resume_step // len(train_dataloader)
             resume_step -= starting_epoch * len(train_dataloader)
-    
 
     # reader = easyocr.Reader([args.tgt_lang], gpu=accelerator.device)
     # best_bleu = 0
@@ -467,7 +484,9 @@ def main():
                     continue
 
             with accelerator.accumulate(model):
-                loss, distill_loss, src_text_loss, tgt_text_loss = model(src_images=batch[0], tgt_images=batch[1], src_text_input=batch[2], tgt_text_input=batch[3], return_loss=True)
+                loss, distill_loss, src_text_loss, tgt_text_loss = model(src_images=batch[0], tgt_images=batch[1],
+                                                                         src_text_input=batch[2],
+                                                                         tgt_text_input=batch[3], return_loss=True)
                 img_translation_loss = loss.detach()
                 loss = loss + args.alpha * distill_loss + args.beta * src_text_loss + args.gamma * tgt_text_loss
                 # We keep track of the loss at each epoch
@@ -481,12 +500,13 @@ def main():
             # Checks if the accelerator has performed an optimization step behind the scenes
             if accelerator.sync_gradients:
                 progress_bar.update(1)
-                progress_bar.set_description(f"Epoch: {epoch} Loss: {img_translation_loss.detach().float()} distill_loss: {distill_loss.detach().float()} src_text_loss: {src_text_loss.detach().float()} tgt_text_loss: {tgt_text_loss.detach().float()}")
+                progress_bar.set_description(
+                    f"Epoch: {epoch} Loss: {img_translation_loss.detach().float()} distill_loss: {distill_loss.detach().float()} src_text_loss: {src_text_loss.detach().float()} tgt_text_loss: {tgt_text_loss.detach().float()}")
                 completed_steps += 1
 
             if isinstance(checkpointing_steps, int):
                 if completed_steps % checkpointing_steps == 0:
-                    output_dir = f"step_{completed_steps }"
+                    output_dir = f"step_{completed_steps}"
                     if args.output_dir is not None:
                         output_dir = os.path.join(args.output_dir, output_dir)
                     accelerator.save_state(output_dir)
@@ -497,34 +517,36 @@ def main():
         model.eval()
         all_accuracy = []
         for step, batch in enumerate(eval_dataloader):
-            if epoch < 60 and epoch%10!=0 :
+            if epoch < 60 and epoch % 10 != 0:
                 all_accuracy.append(0)
                 break
             with torch.no_grad():
-                images, image_tokens, tgt_texts  = accelerator.unwrap_model(model).generate(batch[0])
-                _, ref_image_tokens, _ = accelerator.unwrap_model(model).vae.encode(batch[1], return_indices_and_loss = True)
+                images, image_tokens, tgt_texts = accelerator.unwrap_model(model).generate(batch[0])
+                _, ref_image_tokens, _ = accelerator.unwrap_model(model).vae.encode(batch[1],
+                                                                                    return_indices_and_loss=True)
                 src_texts = accelerator.unwrap_model(model).generate_text(batch[0])
                 ref_src_texts = batch[2]['labels']
                 ref_tgt_texts = batch[3]['labels']
                 # if args.with_tracking:
                 #     eval_total_loss += loss.detach().float()
-            images, sources, references, image_tokens, ref_image_tokens = accelerator.gather_for_metrics((images, batch[0], batch[1], 
-                                                                                          image_tokens, ref_image_tokens
-                                                                                          ))
+            images, sources, references, image_tokens, ref_image_tokens = accelerator.gather_for_metrics(
+                (images, batch[0], batch[1],
+                 image_tokens, ref_image_tokens
+                 ))
             src_texts = accelerator.gather_for_metrics((src_texts))
             ref_src_texts = accelerator.pad_across_processes(ref_src_texts, dim=1, pad_index=src_tokenizer.pad_token_id)
             ref_tgt_texts = accelerator.pad_across_processes(ref_tgt_texts, dim=1, pad_index=tgt_tokenizer.pad_token_id)
             tgt_texts = accelerator.pad_across_processes(tgt_texts, dim=1, pad_index=tgt_tokenizer.pad_token_id)
-            ref_src_texts, ref_tgt_texts, tgt_texts = accelerator.gather_for_metrics((ref_src_texts, ref_tgt_texts, tgt_texts))
-            
-            
-            accuracy = ((image_tokens==ref_image_tokens).sum()/image_tokens.numel()).cpu()
+            ref_src_texts, ref_tgt_texts, tgt_texts = accelerator.gather_for_metrics(
+                (ref_src_texts, ref_tgt_texts, tgt_texts))
+
+            accuracy = ((image_tokens == ref_image_tokens).sum() / image_tokens.numel()).cpu()
             all_accuracy.append(accuracy)
-            imgs_and_recons = torch.stack((sources, references, images), dim = 0)
+            imgs_and_recons = torch.stack((sources, references, images), dim=0)
             imgs_and_recons = rearrange(imgs_and_recons, 'r b ... -> (b r) ...')
             imgs_and_recons = imgs_and_recons.detach().cpu().float().clamp(0., 1.)
-            grid = make_grid(imgs_and_recons, nrow = 3, normalize = True, value_range = (0, 1))
-            
+            grid = make_grid(imgs_and_recons, nrow=3, normalize=True, value_range=(0, 1))
+
             if accelerator.is_local_main_process:
                 save_image(grid, (args.output_dir + "/" + f'epoch_{str(epoch)}.png'))
             accelerator.print("accuracy:{}".format(accuracy))
@@ -532,7 +554,7 @@ def main():
             tgt_texts = tgt_tokenizer.batch_decode(tgt_texts, skip_special_tokens=True)
             ref_src_texts = src_tokenizer.batch_decode(ref_src_texts, skip_special_tokens=True)
             ref_tgt_texts = tgt_tokenizer.batch_decode(ref_tgt_texts, skip_special_tokens=True)
-            
+
             # save the text into file
             if accelerator.is_local_main_process:
                 with open(args.output_dir + "/" + f'epoch_{str(epoch)}.txt', 'a') as f:
@@ -542,9 +564,9 @@ def main():
                         f.write("ref_src: " + ref_src_texts[i] + "\n")
                         f.write("ref_tgt: " + ref_tgt_texts[i] + "\n")
                         f.write("\n")
-                
-                
-        accelerator.print("epoch {}: all accuracy: {}, best accuracy: {}".format(epoch, mean(all_accuracy), best_accuracy))
+
+        accelerator.print(
+            "epoch {}: all accuracy: {}, best accuracy: {}".format(epoch, mean(all_accuracy), best_accuracy))
         if args.with_tracking:
             accelerator.log(
                 {
@@ -575,7 +597,6 @@ def main():
 
         accelerator.wait_for_everyone()
 
-
     if args.with_tracking:
         accelerator.end_training()
 
@@ -593,7 +614,7 @@ def main():
         # load the state_dict from the first folder
         first_state_dict = torch.load(os.path.join(args.output_dir, last_10_folders[0], 'pytorch_model.bin'))
         for key in first_state_dict.keys():
-            if first_state_dict[key].dtype is not torch.int64 and first_state_dict[key].dtype is not torch.int32 :
+            if first_state_dict[key].dtype is not torch.int64 and first_state_dict[key].dtype is not torch.int32:
                 first_state_dict[key] *= 1.0 / num_epochs
 
         # sum the state_dicts from all other folders
@@ -605,7 +626,8 @@ def main():
 
         # save the averaged state_dict to disk
         accelerator.unwrap_model(model).load_state_dict(first_state_dict)
-        torch.save(accelerator.unwrap_model(model).state_dict(), os.path.join(args.output_dir, 'average_pytorch_model.bin'))
+        torch.save(accelerator.unwrap_model(model).state_dict(),
+                   os.path.join(args.output_dir, 'average_pytorch_model.bin'))
 
 
 if __name__ == "__main__":
