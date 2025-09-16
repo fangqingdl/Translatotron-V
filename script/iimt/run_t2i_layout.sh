@@ -25,6 +25,7 @@ nohup torchrun --nproc_per_node=1 --master_port=27699 $prefix/src/run_t2i_with_l
     --num_workers 0 \
     --checkpointing_steps epoch \
     --max_eval_samples 80 \
+    --resume_from_checkpoint $prefix/result_new/t2i_layout_avg/epoch_90 \
     >>$prefix/log_latest/$save_name.log 2>&1 &
 
 #    --resume_from_checkpoint $prefix/result_new/$save_name/epoch_6 \
