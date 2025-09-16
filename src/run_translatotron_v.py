@@ -330,6 +330,8 @@ def main():
             src_img.append(batch[i][0])
             tgt_img.append(batch[i][1])
             # src_text.append(src_tokenizer.bos_token + batch[i][2])
+            print(batch[i][2])
+            print(src_tokenizer.eos_token)
             src_text_label.append(batch[i][2] + src_tokenizer.eos_token)
             # tgt_text.append(src_tokenizer.bos_token + batch[i][3])
             tgt_text_label.append(batch[i][3] + tgt_tokenizer.eos_token)
