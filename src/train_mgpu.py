@@ -34,7 +34,7 @@ if __name__ == '__main__':
         folder=args.data_dir,
         results_folder=args.output_dir,
         num_train_steps=500000,
-        lr=7.5e-5,
+        lr=8e-5,
         batch_size=args.batch_size,
         grad_accum_every=args.grad_accum_every,
         save_results_every=1000,

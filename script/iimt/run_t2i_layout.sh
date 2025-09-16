@@ -20,7 +20,7 @@ nohup torchrun --nproc_per_node=1 --master_port=27699 $prefix/src/run_t2i_with_l
     --tgt_tokenizer_path $prefix/src/config/char_en.tokenizer \
     --vae_config_path $prefix/src/config/vit_vqgan_8192cb.json \
     --t2i_config_path $prefix/src/config/t2i_transformer_distill.json \
-    --vae_weight $prefix/image-tokenizer/en/vae.11000.pt \
+    --vae_weight $prefix/image-tokenizer/de/vae.11000.pt \
     --use_amp true \
     --num_workers 0 \
     --checkpointing_steps epoch \
